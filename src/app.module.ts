@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { HealthModule } from './health/health.module';
 import { InfoModule } from './info/info.module';
 // import { PrismaModule } from './prisma/prisma.module';
@@ -8,7 +10,10 @@ import { InfoModule } from './info/info.module';
   imports: [
     HealthModule,
     InfoModule,
-    // PrismaModule,
+    // PrismaModule
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'),
+    }),
   ],
 })
 export class AppModule {}
