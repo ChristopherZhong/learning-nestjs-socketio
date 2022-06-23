@@ -1,4 +1,3 @@
-import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { getLogLevels } from './logging';
@@ -11,12 +10,12 @@ async function bootstrap() {
   setSecurityHeaders(app);
   app.enableCors({
     origin: (_origin, callback) => {
-      const url = process.env.APP_REGISTRATION_URL;
-      const error = url == undefined ? new Error('CORS is undefined') : null;
-      callback(error, url);
+      // set cors to '*'
+      callback(null, '*');
     },
   });
-  app.useGlobalPipes(new ValidationPipe());
+  // global pipes does not work on websocket gateways
+  // app.useGlobalPipes(new ValidationPipe());
   await app.listen(3000);
 }
 bootstrap();
