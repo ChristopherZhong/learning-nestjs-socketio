@@ -6,7 +6,7 @@ export function setSecurityHeaders(app: INestApplication) {
     helmet({
       contentSecurityPolicy: {
         directives: {
-          'default-src': ["'none'"],
+          'default-src': ["'self' 'unsafe-inline'"],
           'frame-ancestors': ["'none'"],
         },
         useDefaults: false,
