@@ -78,10 +78,4 @@ export class ChatGateway implements OnGatewayInit<ChatServer> {
     socket.to(message.to.socketID).emit('private message', message);
     return { status: 'private message received', message: message };
   }
-
-  // does not work
-  // @SubscribeMessage('disconnect')
-  // handleD() {
-  //   console.log('user disconnected');
-  // }
 }
