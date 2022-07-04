@@ -61,7 +61,7 @@ export class ChatGateway implements OnGatewayInit<ChatServer> {
     @ConnectedSocket() socket: ChatSocket,
   ) {
     console.log('message:', message);
-    const includeSelf = true;
+    const includeSelf = false;
     if (includeSelf) {
       this.server.emit('chat message', message);
     } else {

@@ -119,33 +119,35 @@
       });
 
       // TODO form to get username
-      const name = 'User-' + Math.round(Math.random() * 10000);
-      var username = document.getElementById('username');
-      username.textContent = name;
+      const username = 'User-' + Math.round(Math.random() * 10000);
+      const usernameLabel = document.getElementById('username');
+      usernameLabel.textContent = username;
 
-      if (name != undefined) {
-        socket.auth = { username: name };
-        console.log('connecting ...', socket.auth);
+      if (username != undefined) {
+        socket.auth = { username };
+        console.log(`connecting ...`, socket.auth);
         socket.connect();
       }
 
-      const users = document.getElementById('users');
-      var messages = document.getElementById('messages');
-      var form = document.getElementById('form');
-      var input = document.getElementById('input');
+      const usersList = document.getElementById('users');
+      const messagesList = document.getElementById('messages');
+      const form = document.getElementById('form');
+      const input = document.getElementById('input');
 
       form.addEventListener('submit', function (event) {
         console.log('submit', event);
         event.preventDefault();
-        if (input.value) {
-          const sender = { socketID: socket.id, username: name };
+        const text = input.value;
+        if (text) {
+          const sender = { socketID: socket.id, username };
           socket.emit(
             'chat message',
-            { sender, text: input.value },
+            { sender, text },
             (response) => {
-              console.log('response', response);
+              console.log('chat message response', response);
             },
           );
+          addMessage(text);
           input.value = '';
         }
       });
@@ -155,17 +157,18 @@
           document.getElementById(user.username) ??
           document.createElement('li');
         element.id = user.username;
-        const text = `${user.username} [${
+        element.user = user;
+        const text = `${user.username} ${username == user.username ? '(you)' : ''} [${
           user.connected ? 'connected' : 'disconnected'
-        }]${name == user.username ? ' (you)' : ''}`;
+        }]`;
         element.textContent = text;
-        users.appendChild(element);
+        usersList.appendChild(element);
       }
 
       function addMessage(text) {
         const element = document.createElement('li');
         element.textContent = text;
-        messages.appendChild(element);
+        messagesList.appendChild(element);
         window.scrollTo(0, document.body.scrollHeight);
       }
 
