@@ -108,11 +108,12 @@
     </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
+      // const url = 'http://localhost:3000';
       const socket = io({ autoConnect: false, transport: ['websocket'] });
       // debugging code to log any event
-      // socket.onAny((event, ...args) => {
-      //   console.log('onAny', event, args);
-      // });
+      socket.onAny((event, ...args) => {
+        console.log('onAny', event, args);
+      });
 
       socket.on('connect_error', (error) => {
         console.log('connect_error', error);
@@ -127,75 +128,71 @@
         socket.auth = { username };
         console.log(`connecting ...`, socket.auth);
         socket.connect();
-      }
 
-      const usersList = document.getElementById('users');
-      const messagesList = document.getElementById('messages');
-      const form = document.getElementById('form');
-      const input = document.getElementById('input');
+        const usersList = document.getElementById('users');
+        const messagesList = document.getElementById('messages');
+        const form = document.getElementById('form');
+        const input = document.getElementById('input');
 
-      form.addEventListener('submit', function (event) {
-        console.log('submit', event);
-        event.preventDefault();
-        const text = input.value;
-        if (text) {
-          const sender = { socketID: socket.id, username };
-          socket.emit(
-            'chat message',
-            { sender, text },
-            (response) => {
-              console.log('chat message response', response);
-            },
-          );
-          addMessage(text);
-          input.value = '';
+        function addUser(user) {
+          const element =
+            document.getElementById(user.username) ??
+            document.createElement('li');
+          element.id = user.username;
+          element.user = user;
+          const text = `${user.username} ${
+            username == user.username ? '(you)' : ''
+          } [${user.connected ? 'connected' : 'disconnected'}]`;
+          element.textContent = text;
+          usersList.appendChild(element);
         }
-      });
 
-      function addUser(user) {
-        const element =
-          document.getElementById(user.username) ??
-          document.createElement('li');
-        element.id = user.username;
-        element.user = user;
-        const text = `${user.username} ${username == user.username ? '(you)' : ''} [${
-          user.connected ? 'connected' : 'disconnected'
-        }]`;
-        element.textContent = text;
-        usersList.appendChild(element);
+        function addMessage(text) {
+          const element = document.createElement('li');
+          element.textContent = text;
+          messagesList.appendChild(element);
+          window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        form.addEventListener('submit', function (event) {
+          console.log('submit', event);
+          event.preventDefault();
+          const text = input.value;
+          if (text) {
+            const sender = { socketID: socket.id, username };
+            socket.emit('chat message', { sender, text }, (response) => {
+              console.log('chat message response', response);
+            });
+            addMessage(text);
+            input.value = '';
+          }
+        });
+
+        socket.on('users', function (users) {
+          console.log('users', users);
+          users.forEach(addUser);
+        });
+
+        socket.on('user connected', function (user) {
+          console.log('user connected', user);
+          addUser(user);
+          const text = `user connected: ${user.username}`;
+          addMessage(text);
+        });
+
+        socket.on('user disconnected', function (user) {
+          console.log('user disconnected', user);
+          addUser(user);
+          const text = `user disconnected: ${user.username}`;
+          addMessage(text);
+        });
+
+        socket.on('chat message', function (message) {
+          console.log('chat message', message);
+          const text = `${message.sender.username} > ${message.text}`;
+          addMessage(text);
+        });
       }
-
-      function addMessage(text) {
-        const element = document.createElement('li');
-        element.textContent = text;
-        messagesList.appendChild(element);
-        window.scrollTo(0, document.body.scrollHeight);
-      }
-
-      socket.on('users', function (users) {
-        console.log('users', users);
-        users.forEach(addUser);
-      });
-
-      socket.on('user connected', function (user) {
-        console.log('user connected', user);
-        addUser(user);
-        const text = `user connected: ${user.username}`;
-        addMessage(text);
-      });
-
-      socket.on('user disconnected', function (user) {
-        console.log('user disconnected', user);
-        addUser(user);
-        const text = `user disconnected: ${user.username}`;
-        addMessage(text);
-      });
-
-      socket.on('chat message', function (message) {
-        console.log('chat message', message);
-        const text = `${message.sender.username} > ${message.text}`;
-        addMessage(text);
-      });
     </script>
   </body>
 </html>
