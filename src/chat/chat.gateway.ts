@@ -29,7 +29,7 @@ export class ChatGateway implements OnGatewayInit<ChatServer> {
       socket.broadcast.emit('user connected', user);
 
       function onDisconnect(reason: string) {
-        console.log('user disconnected:', user, reason);
+        console.log('user disconnected:', reason, user);
         user.connected = false;
         socket.broadcast.emit('user disconnected', user);
       }
@@ -60,12 +60,7 @@ export class ChatGateway implements OnGatewayInit<ChatServer> {
     @ConnectedSocket() socket: ChatSocket,
   ) {
     console.log('message:', message);
-    const includeSelf = false;
-    if (includeSelf) {
-      this.server.emit('chat message', message);
-    } else {
-      socket.broadcast.emit('chat message', message);
-    }
+    socket.broadcast.emit('chat message', message);
     return { status: 'chat message received', message: message };
   }
 
