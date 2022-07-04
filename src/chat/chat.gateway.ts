@@ -24,16 +24,16 @@ export class ChatGateway implements OnGatewayInit<ChatServer> {
 
   afterInit(server: ChatServer) {
     function onConnect(socket: ChatSocket) {
+      const user = new User(socket.id, socket.handshake.auth.username);
+      console.log('user connected:', user);
+      socket.broadcast.emit('user connected', user);
+
       function onDisconnect(reason: string) {
         console.log('user disconnected:', user, reason);
         user.connected = false;
         socket.broadcast.emit('user disconnected', user);
       }
       socket.on('disconnect', onDisconnect);
-
-      const user = new User(socket.id, socket.handshake.auth.username);
-      console.log('user connected:', user);
-      socket.broadcast.emit('user connected', user);
 
       function getUsers() {
         const users = [];
@@ -51,7 +51,6 @@ export class ChatGateway implements OnGatewayInit<ChatServer> {
       }
       socket.emit('users', getUsers());
     }
-
     server.on('connection', onConnect);
   }
 
