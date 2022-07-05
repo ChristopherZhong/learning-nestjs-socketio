@@ -59,6 +59,20 @@
         background: #efefef;
       }
 
+      #users {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      #users > li {
+        padding: 0.5rem 1rem;
+      }
+
+      #users > li:nth-child(odd) {
+        background: #efefef;
+      }
+
       .main {
         display: flex;
         flex-direction: column;
@@ -119,8 +133,10 @@
     <script>
       class Messages {
         #byUsername = new Map();
+        #chat = Symbol('chat');
 
-        get(username) {
+        get(user) {
+          const username = user?.username ?? this.#chat;
           let messages = this.#byUsername.get(username);
           if (messages == undefined) {
             messages = [];
@@ -128,6 +144,21 @@
           }
           return messages;
         }
+      }
+    </script>
+    <script>
+      function createUserElement(user, onclick) {
+        const element = document.createElement('li');
+        element.id = user.username;
+        element.user = user;
+        element.onclick = onclick;
+        return element;
+      }
+
+      function createMessageElement(message) {
+        const element = document.createElement('li');
+        element.textContent = `${message.from.username} > ${message.text}`;
+        return element;
       }
     </script>
     <script>
@@ -162,7 +193,7 @@
           const input = document.getElementById('input');
 
           const usersByUsername = new Users();
-          const messagesByUsername = new Messages();
+          const messagesByUser = new Messages();
 
           let selectedUser = undefined;
 
@@ -171,25 +202,21 @@
             usersByUsername.set(user);
             const element =
               document.getElementById(user.username) ??
-              document.createElement('li');
-            element.id = user.username;
-            element.user = user;
-            // sets the onclick function
-            element.onclick = function (event) {
-              console.log('onclick', event, event.target.user);
-              // sets the selected user
-              selectedUser = event.target.user;
-              // get the list of messages between yourself and the selected user
-              const messages = messagesByUsername.get(selectedUser.username);
-              console.log('messages', messages);
-              messagesList.replaceChildren(
-                ...messages.map((message) => {
-                  const element = document.createElement('li');
-                  element.textContent = `${message.from.username} > ${message.text}`;
-                  return element;
-                }),
-              );
-            };
+              createUserElement(user, (event) => {
+                const targetUser = event.target.user;
+                // if the target user is self, unsets the selected user
+                // otherwise, sets the selected user to the target user
+                selectedUser =
+                  targetUser.username === self.username
+                    ? undefined
+                    : targetUser;
+                console.log('onclick', event, targetUser, selectedUser);
+                // get the list of messages between yourself and the selected user
+                const messages = messagesByUser.get(selectedUser);
+                console.log('messages', messages);
+                const elements = messages.map(createMessageElement);
+                messagesList.replaceChildren(...elements);
+              });
             const text = `${user.username} ${
               self.username == user.username ? '(you)' : ''
             } [${user.connected ? 'connected' : 'disconnected'}]`;
@@ -241,13 +268,17 @@
 
           socket.on('chat message', function (message) {
             console.log('chat message', message);
-            const text = `${message.sender.username} > ${message.text}`;
-            addText(text);
+            let messages = messagesByUser.get();
+            messages.push(message);
+            if (selectedUser == undefined) {
+              const text = `${message.from.username} > ${message.text}`;
+              addText(text);
+            }
           });
 
           socket.on('private message', function (message) {
             console.log('private message', message);
-            let messages = messagesByUsername.get(message.from.username);
+            let messages = messagesByUser.get(message.from);
             messages.push(message);
             if (message.from.username === selectedUser?.username) {
               const text = `${message.from.username} > ${message.text}`;
