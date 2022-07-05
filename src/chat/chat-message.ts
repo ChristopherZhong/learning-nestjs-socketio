@@ -6,7 +6,7 @@ export class ChatMessage {
   @IsObject()
   @ValidateNested()
   @Type(() => User)
-  sender!: User;
+  from!: User;
 
   @IsString()
   text!: string;

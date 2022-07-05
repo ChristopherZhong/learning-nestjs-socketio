@@ -1,18 +1,11 @@
 import { Type } from 'class-transformer';
-import { IsObject, IsString, ValidateNested } from 'class-validator';
+import { IsObject, ValidateNested } from 'class-validator';
 import { User } from '../user/user';
+import { ChatMessage } from './chat-message';
 
-export class PrivateMessage {
-  @IsObject()
-  @ValidateNested()
-  @Type(() => User)
-  from!: User;
-
+export class PrivateMessage extends ChatMessage {
   @IsObject()
   @ValidateNested()
   @Type(() => User)
   to!: User;
-
-  @IsString()
-  text!: string;
 }
