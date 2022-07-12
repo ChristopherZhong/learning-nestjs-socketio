@@ -1,4 +1,4 @@
-# ICatalyst NestJS Starter
+# Learning NestJS and Socket.io
 
 This project was initialized with the following command to scaffold a [Nest](https://github.com/nestjs/nest) framework TypeScript starter project.
 
@@ -94,185 +94,7 @@ npx nest generate controller captures
 npx nest generate service captures
 ```
 
-### Signature Verification
-
-This project requires incoming requests be signed.
-Requests should be signed with [HMAC-SHA256](https://en.wikipedia.org/wiki/HMAC).
-The signature should be in the `x-signature` HTTP header.
-A [Postman](https://www.postman.com/) collection with sample requests is provided in the [Capture Processor APIs.postman_collection.json](./docs/Capture%20Processor%20APIs.postman_collection.json) file.
-
 ## External Dependencies
-
-### Database
-
-This project uses a [PostgreSQL](https://www.postgresql.org/) database.
-Connection to the database is through the [Prisma](https://www.prisma.io/) ORM library.
-Prisma provides a CLI that can be used to initialize or add Prisma.
-Install the CLI using the following commands.
-
-```shell
-# adds the Prisma CLI as a dev dependency
-npm install --save-dev prisma
-# initialize/add Prisma to the project
-npx prisma init
-```
-
-Further details on getting started with Prisma can be read at https://www.prisma.io/docs/getting-started.
-Further details on NestJS integration with Prisma can be read at https://docs.nestjs.com/recipes/prisma.
-
-When Prisma is initialized, a [prisma](./prisma) directory is created that contains the schema file ([schema.prisma](./prisma/schema.prisma)).
-Based on the schema, Prisma will generate a client that can be used to interact with the database.
-This client can be installed using the following command.
-
-```shell
-npm install @prisma/client
-```
-
-Further information on how to use the Prisma client is at https://www.prisma.io/docs/reference/api-reference/prisma-client-reference.
-
-Further details on the specifications of the schema is at https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference and https://www.prisma.io/docs/concepts/components/prisma-schema.
-And since the underlying database is PostgreSQL, specific details on how Prisma interacts with PostgresSQL is at https://www.prisma.io/docs/concepts/database-connectors/postgresql.
-
-#### Schema Development Workflow
-
-The Prisma CLI provides ways to aid in the development of models.
-When there is an initial model, the following command creates a migration file, syncs the database, and updates the Prisma client.
-Further details are located at https://www.prisma.io/docs/guides/database/developing-with-prisma-migrate, https://www.prisma.io/docs/concepts/components/prisma-migrate, and https://www.prisma.io/docs/reference/api-reference/command-reference#prisma-migrate.
-
-```shell
-npx prisma migrate dev --name <name-of-migration>
-```
-
-Deploying migrations to production is as simple as the following command.
-
-```shell
-npx prisma migrate deploy
-```
-
-When developing Prisma models for PostgreSQL, further details on the type mappings is at https://www.prisma.io/docs/concepts/database-connectors/postgresql#type-mapping-between-postgresql-to-prisma-schema.
-
-#### Environment Variable(s)
-
-There are five database environment variables and one Prisma environment variable.
-The database environment variables are used in the [docker-compose.yml](./docker-compose.yml) file for the `database` service.
-And the Prisma environment variable is used in the Prisma schema file in the `env()`.
-
-```dotenv
-# Database
-DATABASE_HOST=localhost
-DATABASE_NAME=nestjs
-DATABASE_PASSWORD=password
-DATABASE_PORT=5432
-DATABASE_USER=nestjs
-
-# Prisma
-DATABASE_URL=postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}?schema=public
-```
-
-### Elasticsearch
-
-This project uses an [Elasticsearch](https://www.elastic.co/) cluster to provide better queries on captures.
-There is a NestJS integration with Elasticsearch through the [@nestjs/elasticsearch](https://github.com/nestjs/elasticsearch) package.
-Install the dependencies using the following command.
-
-```shell
-npm install --save @nestjs/elasticsearch @elastic/elasticsearch
-```
-
-#### Environment Variables
-
-There are seven Elasticsearch environment variables.
-They are used in the [docker-compose.yml](./docker-compose.yml), [docker-compose.local.yml](./docker-compose.local.yml), and [01.yml](./elasticsearch/config/01.yml) files.
-
-```dotenv
-ELASTICSEARCH_CLUSTER_NAME=elasticsearch-cluster
-ELASTICSEARCH_JAVA_OPTS="-Xms256m -Xmx256m"
-ELASTICSEARCH_PASSWORD=changeme
-ELASTICSEARCH_PORT=9200
-ELASTICSEARCH_URL=http://localhost:${ELASTICSEARCH_PORT}
-ELASTICSEARCH_USERNAME=elastic
-ELASTICSEARCH_VERSION=7.15.0
-```
-
-### OpenAPIs
-
-The first time a capture processor starts up, it will perform a self-registration with [OpenAPIs](https://gitlab.com/cognitive-edge/open-apis).
-
-#### Environment Variable(s)
-
-There are three required environment variables.
-They are used in the [docker-compose.yml](./docker-compose.yml) file.
-
-```dotenv
-APP_REGISTRATION_TOKEN=token
-APP_REGISTRATION_URL=http://localhost:9000
-APP_URL=http://localhost:3000
-```
-
-## AWS Deployment
-
-This project can be deployed to AWS using the Docker Compose [ECS](https://docs.docker.com/cloud/ecs-integration/) integration.
-Before being able to deploy, a new Docker context needs to be created and two repositories in AWS [ECR](https://aws.amazon.com/ecr/) to store the images.
-The name of the repositories are `cognitive-edge/capture-processor` and `cognitive-edge/elasticsearch`, which correspond to the `image` keys in the [docker-compose.yml](./docker-compose.yml) file.
-Create a new Docker ECS context using the following command and follow the interactive instructions.
-
-```shell
-docker context create ecs <name-of-ecs-context>
-```
-
-Once the Docker context is created, the images need to be built and pushed to two ECR repositories.
-One repository for the application itself and the other repository for the Elasticsearch image.
-Build the Docker images using the following command with the [docker-compose.build.yml](./docker-compose.build.yml) file.
-For convenience, a [build](./scripts/build) script is provided.
-
-```shell
-docker compose --file docker-compose.yml --file docker-compose.build.yml build
-```
-
-Then login to AWS ECR using the following command.
-
-```shell
-aws ecr get-login-password | docker login --username AWS --password-stdin 1234567890.dkr.ecr.aws-region.amazonaws.com
-```
-
-And to push the images to the two ECR repositories, use the following commands.
-
-```shell
-docker push --all-tags 1234567890.dkr.ecr.aws-region.amazonaws.com/cognitive-edge/capture-processor
-docker push --all-tags 1234567890.dkr.ecr.aws-region.amazonaws.com/cognitive-edge/elasticsearch
-```
-
-Once the images are pushed, deploy to AWS using the following command.
-It will create a new or update an existing CloudFormation stack using the current directory name as the stack name.
-
-```shell
-docker --context <name-of-ecs-context> compose --file docker-compose.yml up
-```
-
-To use a different stack name use the `--project-name` option as follows.
-
-```shell
-docker --context <name-of-ecs-context> compose --file docker-compose.yml --project-name <name-of-project> up
-```
-
-To remove the CloudFormation stack and its resources, replace the command `up` with `down` as follows.
-
-```shell
-docker --context <name-of-ecs-context> compose --file docker-compose.yml down
-```
-
-#### Environment Variable(s)
-
-There are two environment variables.
-They are used in the [docker-compose.yml](./docker-compose.yml) and [docker-compose.build.yml](./docker-compose.build.yml) files.
-
-```dotenv
-# Docker
-DOCKER_REGISTRY=1234567890.dkr.ecr.aws-region.amazonaws.com
-
-# Elasticsearch
-ELASTICSEARCH_VERSION=7.15.0
-```
 
 ## Environment Variable(s)
 
@@ -281,29 +103,14 @@ The following is a combined list of environment variables and example values.
 ```dotenv
 # APP
 APP_PORT=3000
-APP_REGISTRATION_TOKEN=token
-APP_REGISTRATION_URL=http://localhost:9000
 APP_URL=http://localhost:3000
-
-# Database
-DATABASE_HOST=localhost
-DATABASE_NAME=nestjs
-DATABASE_PASSWORD=password
-DATABASE_PORT=5432
-DATABASE_USER=nestjs
-
-# Docker
-DOCKER_REGISTRY=1234567890.dkr.ecr.aws-region.amazonaws.com
-
-# Elasticsearch
-ELASTICSEARCH_CLUSTER_NAME=elasticsearch-cluster
-ELASTICSEARCH_JAVA_OPTS="-Xms256m -Xmx256m"
-ELASTICSEARCH_PASSWORD=changeme
-ELASTICSEARCH_PORT=9200
-ELASTICSEARCH_URL=http://localhost:${ELASTICSEARCH_PORT}
-ELASTICSEARCH_USERNAME=elastic
-ELASTICSEARCH_VERSION=7.15.0
-
-# Prisma
-DATABASE_URL=postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}?schema=public
 ```
+
+## TODOs
+
+- [x] Broadcast a message to connected users when someone connects or disconnects.
+- [] Add support for nicknames.
+- [x] Don’t send the same message to the user that sent it. Instead, append the message directly as soon as he/she presses enter.
+- [] Add “{user} is typing” functionality.
+- [x] Show who’s online.
+- [x] Add private messaging.
